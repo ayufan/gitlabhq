@@ -19,7 +19,20 @@ class GitTagPushService
   private
 
   def create_push_data(oldrev, newrev, ref)
+    commits = []
+    message = nil
+
+    if newrev != Gitlab::Git::BLANK_SHA
+      tag_name = ref.sub(/\Arefs\/(heads|tags)\//, '')
+      tag = project.repository.find_tag(tag_name)
+      if tag
+        commit = project.repository.commit(tag.target)
+        commits = [commit].compact
+        message = tag.message
+      end
+    end
+
     Gitlab::PushDataBuilder.
-      build(project, user, oldrev, newrev, ref, [])
+      build(project, user, oldrev, newrev, ref, commits, message)
   end
 end
