@@ -20,11 +20,13 @@ module Backup
         pg_env
         system('pg_dump', config['database'], out: db_file_name)
       end
+      success &&= system('gzip', db_file_name)
       report_success(success)
       abort 'Backup failed' unless success
     end
 
     def restore
+      system('gzip', '-d', db_file_name_gz) if File.exist? db_file_name_gz
       success = case config["adapter"]
       when /^mysql/ then
         $progress.print "Restoring MySQL database #{config['database']} ... "
@@ -46,6 +48,10 @@ module Backup
 
     def db_file_name
       File.join(db_dir, 'database.sql')
+    end
+
+    def db_file_name_gz
+      File.join(db_dir, 'database.sql.gz')
     end
 
     def mysql_args
